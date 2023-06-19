@@ -1,6 +1,22 @@
 # [grammY](https://grammy.dev) on [Supabase Edge Functions](https://supabase.com/edge-functions)
 
-> Try it out: [@supabase_example_bot](https://t.me/supabase_example_bot)
+> Try it out: https://t.me/SGjobsHelperBot
+
+## Run locally
+
+```bash
+supabase functions serve --no-verify-jwt --env-file ./supabase/.env
+```
+
+In a separate terminal window run
+
+```bash
+ngrok http 54321
+```
+
+Register the bot webhook
+
+https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://your-ngrok-url.ngrok.app/telegram-bot?secret=<FUNCTION_SECRET>
 
 ## Deploying
 
