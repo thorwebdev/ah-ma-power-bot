@@ -2,17 +2,13 @@
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.25.0";
+import { serve } from "http/server.ts";
+import { createClient } from "@supabase/supabase-js";
 import { Database } from "../_shared/db_types.ts";
 
 console.log(`Function "telegram-bot" up and running!`);
 
-import {
-  Bot,
-  webhookCallback,
-  InlineKeyboard,
-} from "https://deno.land/x/grammy@v1.16.2/mod.ts";
+import { Bot, webhookCallback, InlineKeyboard } from "grammy";
 
 const bot = new Bot(Deno.env.get("BOT_TOKEN") || "");
 const supabase = createClient<Database>(
