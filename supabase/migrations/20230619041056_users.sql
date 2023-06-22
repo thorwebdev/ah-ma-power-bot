@@ -4,7 +4,7 @@ create table "public"."users" (
     "name" text not null,
     "age" smallint,
     "experience" text,
-    "photo_url" text,
+    "photo_path" text,
     step smallint not null default '0'::smallint,
     resume_html text,
     resume_markdown text
