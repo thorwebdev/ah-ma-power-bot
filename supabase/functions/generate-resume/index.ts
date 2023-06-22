@@ -39,6 +39,15 @@ serve(async (req) => {
     // Retrieve user details if final step is reached
     if (user.resume_markdown || user.step !== 4) return new Response("ok");
 
+    // Get a temporary photo url to create the resume
+    let photo_url: string | undefined;
+    if (user.photo_path) {
+      const { data } = await supabase.storage
+        .from("images")
+        .createSignedUrl(user.photo_path, 60, { transform: { width: 300 } });
+      if (data) photo_url = data.signedUrl;
+    }
+
     // Construct the prompt
     const prompt = `
     Given the following context, generate a one page resume in Markdown format. 
@@ -50,10 +59,12 @@ serve(async (req) => {
     Expand the experience section to include a paragraph for each bullet point but don't invent any facts.
 
     CONTEXT:
-    ${user.photo_url ? `- Photo: ${user.photo_url}` : ""}
+    ${photo_url ? `- Photo: ${photo_url}` : ""}
     - Personal Particulars:
       - Name: ${user.name}
-      - Age: ${user.age} (include the birth year)
+      - Age: ${
+        user.age
+      } (include the birth year calculated from current year ${new Date().getFullYear()})
     - Contact Information:
       - Phone: 12345678 (phone communication preferred)
       - Postal code: 460503
@@ -107,7 +118,13 @@ serve(async (req) => {
         console.log(res);
         return res.blob();
       });
-      // TODO upload to supabase storage
+      // upload to supabase storage
+      await supabase.storage
+        .from("resumes")
+        .upload(`${user.id}.pdf`, pdfArrayBuffer, {
+          contentType: "application/pdf",
+          upsert: true,
+        });
       // Send in telegram
       await bot.api.sendDocument(
         user.id,

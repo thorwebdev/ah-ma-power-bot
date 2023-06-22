@@ -10,7 +10,8 @@ console.log(`Function "telegram-bot" up and running!`);
 
 import { Bot, webhookCallback, InlineKeyboard } from "grammy";
 
-const bot = new Bot(Deno.env.get("BOT_TOKEN") || "");
+const telegramBotToken = Deno.env.get("BOT_TOKEN");
+const bot = new Bot(telegramBotToken || "");
 const supabase = createClient<Database>(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -140,14 +141,26 @@ bot.on("message", async (ctx) => {
     case 2:
       {
         // Collect photo
-        let photo_url = null;
-        if (message.text?.toLowerCase() !== "no") {
-          // TODO: handle photo uplpad.
-          console.log("photo upload", message);
+        let photo_path = null;
+        if (!message.text || message.text?.toLowerCase() !== "no") {
+          // handle photo uplpad.
+          const file = await ctx.getFile();
+          const fileURL = `https://api.telegram.org/file/bot${telegramBotToken}/${file.file_path}`;
+          // Upload to supabase storage
+          const fileBuffer = await fetch(fileURL).then((res) =>
+            res.arrayBuffer()
+          );
+          await supabase.storage
+            .from("images")
+            .upload(`${userId}.jpg`, fileBuffer, {
+              contentType: "image/jpg",
+              upsert: true,
+            });
+          photo_path = `${userId}.jpg`;
         }
         const { error } = await supabase
           .from("users")
-          .update({ photo_url, step: step + 1 })
+          .update({ photo_path, step: step + 1 })
           .eq("id", userId);
         if (error) {
           console.log(`Error ${error.message} for user ${userId}`);
