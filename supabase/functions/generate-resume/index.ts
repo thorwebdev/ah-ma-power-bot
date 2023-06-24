@@ -15,7 +15,7 @@ const supabase = createClient<Database>(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 const converter = new showdown.Converter();
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 type UserRecord = Database["public"]["Tables"]["users"]["Row"];
 interface WebhookPayload {
@@ -38,19 +38,20 @@ serve(async (req) => {
     const payload: WebhookPayload = await req.json();
     const user = payload.record;
     // Retrieve user details if final step is reached
-    if (user.resume_markdown || user.step !== 4) return new Response("ok");
+    if (user.step !== 4) return new Response("ok");
 
-    // Get a temporary photo url to create the resume
-    let photo_url: string | undefined;
-    if (user.photo_path) {
-      const { data } = await supabase.storage
-        .from("images")
-        .createSignedUrl(user.photo_path, 60, { transform: { width: 300 } });
-      if (data) photo_url = data.signedUrl;
-    }
+    if (!user.resume_markdown) {
+      // Get a temporary photo url to create the resume
+      let photo_url: string | undefined;
+      if (user.photo_path) {
+        const { data } = await supabase.storage
+          .from("images")
+          .createSignedUrl(user.photo_path, 60, { transform: { width: 300 } });
+        if (data) photo_url = data.signedUrl;
+      }
 
-    // Construct the prompt
-    const prompt = `
+      // Construct the prompt
+      const prompt = `
     Given the following context, generate a one page resume in Markdown format. 
 
     If there is a photo, include it at the top.
@@ -76,83 +77,86 @@ serve(async (req) => {
       - speaks english
       - speaks and writes mandarin
   `;
-    // Request the OpenAI API for the response based on the prompt
-    const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      stream: false,
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 2200,
-      temperature: 0,
-    });
-
-    const data =
-      (await response.json()) as ResponseTypes["createChatCompletion"];
-    const markdownContent = data.choices[0].message?.content;
-    if (markdownContent) {
-      const htmlContent = converter.makeHtml(markdownContent);
-      // Write to db
-      await supabase
-        .from("users")
-        .update({ resume_markdown: markdownContent, resume_html: htmlContent })
-        .eq("id", user.id);
-      // Convert to PDF
-      const pdfArrayBuffer = await fetch(
-        `https://chrome.browserless.io/pdf?token=${Deno.env.get(
-          "BROWSERLESS_API_KEY"
-        )}`,
-        {
-          method: "POST",
-          headers: {
-            "Cache-Control": "no-cache",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            html: htmlContent,
-            options: {
-              displayHeaderFooter: true,
-              printBackground: false,
-              format: "A4",
-            },
-          }),
-        }
-      ).then((res) => {
-        console.log(res);
-        return res.blob();
+      // Request the OpenAI API for the response based on the prompt
+      const response = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        stream: false,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 2200,
+        temperature: 0,
       });
-      // upload to supabase storage
-      await supabase.storage
-        .from("resumes")
-        .upload(`${user.id}.pdf`, pdfArrayBuffer, {
-          contentType: "application/pdf",
-          upsert: true,
-        });
-      // Send in telegram
-      await bot.api.sendDocument(
-        user.id,
-        new InputFile(pdfArrayBuffer, `${user.name}-resume.pdf`)
-      );
-      // Send email to "SilverJobs"
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
+
+      const data =
+        (await response.json()) as ResponseTypes["createChatCompletion"];
+      const markdownContent = data.choices[0].message?.content;
+      if (markdownContent) {
+        user.resume_html = converter.makeHtml(markdownContent);
+        // Write to db
+        await supabase
+          .from("users")
+          .update({
+            resume_markdown: markdownContent,
+            resume_html: user.resume_html,
+          })
+          .eq("id", user.id);
+      }
+    }
+    // Convert to PDF
+    const pdfResponse = await fetch(
+      `https://chrome.browserless.io/pdf?token=${Deno.env.get(
+        "BROWSERLESS_API_KEY"
+      )}`,
+      {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${RESEND_API_KEY}`,
+          "Cache-Control": "no-cache",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: 'onboarding@resend.dev',
-          to: 'ahmapowerbfg@gmail.com',
-          subject: `Elderly looking for Jobs - ${user.name}`,
-          html: '<strong>Elderly Looking for suitable Jobs!</strong>',
-          attachments: [
-            {
-              filename: `${user.name}-resume.pdf`,
-              content: pdfArrayBuffer,
-            },
-          ],
-        })
-      })
-      
-    }
+          html: user.resume_html,
+          options: {
+            displayHeaderFooter: true,
+            printBackground: false,
+            format: "A4",
+          },
+        }),
+      }
+    );
+    const pdfBlob = await pdfResponse.blob();
+    const pdfArrayBuffer = await pdfBlob.arrayBuffer();
+    // upload to supabase storage
+    await supabase.storage
+      .from("resumes")
+      .upload(`${user.id}.pdf`, pdfArrayBuffer, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+    // Send in telegram
+    await bot.api.sendDocument(
+      user.id,
+      new InputFile(pdfBlob, `${user.name}-resume.pdf`)
+    );
+    // Send email to "SilverJobs"
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "onboarding@resend.dev",
+        to: "ahmapowerbfg@gmail.com",
+        subject: `Elderly looking for Jobs - ${user.name}`,
+        html: "<strong>Elderly Looking for suitable Jobs!</strong>",
+        attachments: [
+          {
+            filename: `${user.name}-resume.pdf`,
+            content: pdfArrayBuffer,
+          },
+        ],
+      }),
+    });
+    if (!res.ok) console.log("error sending email");
   } catch (e) {
     console.log(e);
   }
