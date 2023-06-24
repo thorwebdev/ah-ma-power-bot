@@ -114,16 +114,17 @@ bot.on("message", async (ctx) => {
         }
         ctx.api.sendMessage(
           userId,
-          `Thank you! Now tell us a bit about your work experience!`
+          `Thank you! Now tell us a bit about your work experience! No need to type, you can simply record a voice message!`
         );
       }
       break;
     case 1:
       {
+        // TODO check if we have audio recording
         // Collect experience
         const { error } = await supabase
           .from("users")
-          .update({ experience: message.text!, step: step + 1 })
+          .update({ experience: message.text ?? null, step: step + 1 })
           .eq("id", userId);
         if (error) {
           console.log(`Error ${error.message} for user ${userId}`);
