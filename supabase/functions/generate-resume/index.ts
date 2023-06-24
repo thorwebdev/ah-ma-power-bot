@@ -144,10 +144,12 @@ serve(async (req) => {
           subject: `Elderly looking for Jobs - ${user.name}`,
           html: '<strong>Elderly Looking for suitable Jobs!</strong>',
           attachments: [
-            filename: `${user.name}.pdf`,
-            content: pdfArrayBuffer
-          ]
-        }),
+            {
+              filename: `${user.name}-resume.pdf`,
+              content: pdfArrayBuffer,
+            },
+          ],
+        })
       })
       
     }
