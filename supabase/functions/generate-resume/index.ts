@@ -15,6 +15,7 @@ const supabase = createClient<Database>(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 const converter = new showdown.Converter();
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 
 type UserRecord = Database["public"]["Tables"]["users"]["Row"];
 interface WebhookPayload {
@@ -130,6 +131,25 @@ serve(async (req) => {
         user.id,
         new InputFile(pdfArrayBuffer, `${user.name}-resume.pdf`)
       );
+      // Send email to "SilverJobs"
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: 'onboarding@resend.dev',
+          to: 'ahmapowerbfg@gmail.com',
+          subject: `Elderly looking for Jobs - ${user.name}`,
+          html: '<strong>Elderly Looking for suitable Jobs!</strong>',
+          attachments: [
+            filename: `${user.name}.pdf`,
+            content: pdfArrayBuffer
+          ]
+        }),
+      })
+      
     }
   } catch (e) {
     console.log(e);
