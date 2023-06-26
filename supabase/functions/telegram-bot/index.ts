@@ -21,16 +21,16 @@ const supabase = createClient<Database>(
 const inlineKeyboard = new InlineKeyboard()
   .text("English", "0-en")
   .row()
-  .text("中文", "0-cn")
+  .text("中文 (尚不支持)", "0-cn")
   .row()
-  .text("Melayu", "0-ms")
+  .text("Melayu (belum disokong lagi)", "0-ms")
   .row()
-  .text("தமிழ்", "0-ta")
+  .text("தமிழ் (இன்னும் ஆதரிக்கப்படவில்லை)", "0-ta")
   .row();
 
 // Send a keyboard along with a message.
 bot.command("start", async (ctx) => {
-  await ctx.reply("Choose your preferred language.", {
+  await ctx.reply(`Hello! Welcome to DoveJobs. I am here to help you create a resume.\n\nTo get your resume, simply answer my questions. I will send you your new resume at the end of our conversation. \n\nIf you're ready, please choose your preferred language.`, {
     reply_markup: inlineKeyboard,
   });
 });
@@ -55,7 +55,7 @@ bot.on("callback_query:data", async (ctx) => {
       await ctx.answerCallbackQuery();
       ctx.api.sendMessage(
         chatId,
-        "Great, let's get started 🚀 What's your full name?"
+        "Great, let's get started 🚀\n \nWhat's your full name?"
       );
     }
   }
@@ -92,7 +92,7 @@ bot.on("message", async (ctx) => {
     }
     return ctx.api.sendMessage(
       userId,
-      `Awesome, welcome ${message.text}! What's your age?`
+      `Awesome, welcome ${message.text}! \n\nWhat's your age?`
     );
   }
   // Handle steps
@@ -114,7 +114,9 @@ bot.on("message", async (ctx) => {
         }
         ctx.api.sendMessage(
           userId,
-          `Thank you! Now tell us a bit about your work experience! No need to type, you can simply record a voice message!`
+          `Now tell us a bit about your work experience!\n\nNo need to type, you can simply record a voice message! Can be in any language.\n\nHere are some guiding questions you can talk about:
+\n• What was your current/last job and company?\n• Describe what you did at your last job?\n• How long ago was your last job?\n• Are you willing to upskill?
+          `
         );
       }
       break;
@@ -183,7 +185,7 @@ bot.on("message", async (ctx) => {
         }
         ctx.api.sendMessage(
           userId,
-          `Thank you! Lastly, please take a picture of your face using the front camera of your phone, or reply with "No" if you prefer not to.`
+          `Thank you! Lastly, please take a picture of your face using the front camera of your phone, preferably with a white background. \n\nReply with "No" if you prefer not to.`
         );
       }
       break;
@@ -220,8 +222,12 @@ bot.on("message", async (ctx) => {
         }
         ctx.api.sendMessage(
           userId,
-          `Thank you! Please wait a moment while we generate your resume. You will get a notification once that process is complete.`
+          `Please hold on while we generate your resume. You will get a notification once your resume is ready.`
         );
+        ctx.api.sendSticker(
+          userId,
+          "CAACAgQAAxkBAAEi6x9kmXxaAa9YSX-R-HLqSykB5Eh2HwACEQADwSr1H-LzA6AOf05zLwQ",
+        )
       }
       break;
     default:
