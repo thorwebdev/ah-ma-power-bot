@@ -2,13 +2,13 @@
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
 
-import { serve } from "http/server.ts";
 import { createClient } from "@supabase/supabase-js";
+import { serve } from "http/server.ts";
 import { Database } from "../_shared/db_types.ts";
 
 console.log(`Function "telegram-bot" up and running!`);
 
-import { Bot, webhookCallback, InlineKeyboard } from "grammy";
+import { Bot, InlineKeyboard, webhookCallback } from "grammy";
 
 const telegramBotToken = Deno.env.get("BOT_TOKEN");
 const bot = new Bot(telegramBotToken || "");

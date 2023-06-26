@@ -1,7 +1,7 @@
-import { serve } from "http/server.ts";
-import { Configuration, OpenAIApi, ResponseTypes } from "openai-edge";
 import { createClient } from "@supabase/supabase-js";
 import { Bot, InputFile } from "grammy";
+import { serve } from "http/server.ts";
+import { Configuration, OpenAIApi, ResponseTypes } from "openai-edge";
 import showdown from "showdown";
 import { Database } from "../_shared/db_types.ts";
 
@@ -61,12 +61,22 @@ serve(async (req) => {
     ${photo_url ? `- Photo: ${photo_url}` : ""}
     - Personal Particulars:
       - Name: ${user.name}
-      - Age: ${user.age} (include the birth year)
+      - Age: ${user.age}
     - Contact Information:
-      - Phone: 12345678 (phone communication preferred)
-      - Postal code: 460503
-    - Experience:
-      ${user.experience}
+      ${
+        user.phone_number
+          ? `- Phone: ${user.phone_number}  (phone communication preferred)`
+          : ""
+      } 
+      ${user.postal_code ? `- Postal code: ${user.postal_code}` : ""}
+    - Experience: ${user.experience}
+    - Skills:
+      - speaks english
+      ${
+        user.preferred_language
+          ? `- Speaks and writes ${user.preferred_language}`
+          : ""
+      }
   `;
     // Request the OpenAI API for the response based on the prompt
     const response = await openai.createChatCompletion({
@@ -105,6 +115,11 @@ serve(async (req) => {
               printBackground: false,
               format: "A4",
             },
+            // addStyleTag: [
+            //   {
+            //     url: "./styles.css",
+            //   },
+            // ],
           }),
         }
       ).then((res) => {
