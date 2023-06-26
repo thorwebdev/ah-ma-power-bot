@@ -84,5 +84,8 @@ gcp_jwt_path = "supabase/gcloud.json"
 [functions.telegram-bot]
 verify_jwt = false
 
+[functions.generate-experience]
+verify_jwt = false
+
 [functions.generate-resume]
 verify_jwt = true

@@ -1,7 +1,3 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
 import { serve } from "http/server.ts";
 import { Configuration, OpenAIApi, ResponseTypes } from "openai-edge";
 import { createClient } from "@supabase/supabase-js";
@@ -37,43 +33,40 @@ serve(async (req) => {
     const payload: WebhookPayload = await req.json();
     const user = payload.record;
     // Retrieve user details if final step is reached
-    if (user.resume_markdown || user.step !== 4) return new Response("ok");
+    if (user.resume_markdown || user.step !== 3 || !user.experience)
+      return new Response("ok");
 
     // Get a temporary photo url to create the resume
     let photo_url: string | undefined;
     if (user.photo_path) {
       const { data } = await supabase.storage
         .from("images")
-        .createSignedUrl(user.photo_path, 60, { transform: { width: 300 } });
+        .createSignedUrl(user.photo_path, 60, {
+          transform: { width: 200, height: 200, resize: "contain" },
+        });
+      console.log({ data });
       if (data) photo_url = data.signedUrl;
     }
 
     // Construct the prompt
     const prompt = `
-    Given the following context, generate a one page resume in Markdown format. 
-
-    If there is a photo, include it at the top.
-
-    Include a callout as Markdown block quote about the "NEW PART-TIME RE-EMPLOYMENT GRANT (UP TO $125,000 PER COMPANY)" when employing a senior worker aged 60 years and above with a link to https://www.wsg.gov.sg/docs/default-source/content/programmes-and-initiatives/senior-worker-early-adopter-grant-and-part-time-re-employment-grant-employers/new-ptrg-factsheet.pdf?sfvrsn=586dc2eb_0 titled "more details".
-    
-    Expand the experience section to include a paragraph for each bullet point but don't invent any facts.
+    - Given the following context, generate a one page resume in Markdown format. 
+    - If there is a photo, include it at the top.
+    - Include a callout as Markdown block quote about the "NEW PART-TIME RE-EMPLOYMENT GRANT (UP TO $125,000 PER COMPANY)" when employing a senior worker aged 60 years and above with a link to https://www.wsg.gov.sg/docs/default-source/content/programmes-and-initiatives/senior-worker-early-adopter-grant-and-part-time-re-employment-grant-employers/new-ptrg-factsheet.pdf?sfvrsn=586dc2eb_0 titled "more details".
+    - Calculate all dates based on the current year: ${new Date().getFullYear()}
+    - In the Experience section, provide as much context as possible.
+    - Only use the information provided in the CONTEXT.
 
     CONTEXT:
     ${photo_url ? `- Photo: ${photo_url}` : ""}
     - Personal Particulars:
       - Name: ${user.name}
-      - Age: ${
-        user.age
-      } (include the birth year calculated from current year ${new Date().getFullYear()})
+      - Age: ${user.age} (include the birth year)
     - Contact Information:
       - Phone: 12345678 (phone communication preferred)
       - Postal code: 460503
     - Experience:
-      - 10 years driving fork lift (has license)
-      - 10 years facility management
-    - Skills:
-      - speaks english
-      - speaks and writes mandarin
+      ${user.experience}
   `;
     // Request the OpenAI API for the response based on the prompt
     const response = await openai.createChatCompletion({
@@ -81,7 +74,7 @@ serve(async (req) => {
       stream: false,
       messages: [{ role: "user", content: prompt }],
       max_tokens: 2200,
-      temperature: 0,
+      temperature: 0.2,
     });
 
     const data =
