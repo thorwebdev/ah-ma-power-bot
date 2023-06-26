@@ -120,7 +120,6 @@ bot.on("message", async (ctx) => {
       break;
     case 1:
       {
-        // TODO make async to prefent timeouts from happening
         //  Check if we have audio recording
         const file = await ctx.getFile();
         const fileURL = `https://api.telegram.org/file/bot${telegramBotToken}/${file.file_path}`;
@@ -134,7 +133,7 @@ bot.on("message", async (ctx) => {
         };
         console.log("cloudconvert headers", headers);
         const audioConversionRes = await fetch(
-          `https://sync.api.cloudconvert.com/v2/jobs`,
+          `https://api.cloudconvert.com/v2/jobs`,
           {
             method: "POST",
             headers,
@@ -146,6 +145,7 @@ bot.on("message", async (ctx) => {
                   filename,
                 },
                 "task-1": {
+                  filename: `${userId}.mp3`,
                   operation: "convert",
                   input_format: "oga",
                   output_format: "mp3",
@@ -166,44 +166,11 @@ bot.on("message", async (ctx) => {
           }
         ).then((res) => res.json());
         console.log("audioConversionRes", audioConversionRes);
-        const mp3Url = (
-          audioConversionRes.data.tasks as Array<{ [key: string]: any }>
-        ).filter((i) => i.operation === "export/url")[0].result.files[0].url;
-        console.log("mp3url", mp3Url);
-        const fileBlob = await fetch(mp3Url).then((res) => {
-          console.log("fetch mp3 response", res);
-          return res.blob();
-        });
-        // Upload to supabase storage
-        await supabase.storage
-          .from("experiences")
-          .upload(`${userId}-experience.mp3`, fileBlob, { upsert: true });
-        // Translate with OpenAI whisper!
-        const body = new FormData();
-        body.append("file", fileBlob, `${userId}-experience.mp3`);
-        body.append("model", "whisper-1");
-        body.append("prompt", "Translate any detected language into English.");
-        body.append("temperature", "0.2");
-        const translationResponse = await fetch(
-          "https://api.openai.com/v1/audio/translations",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
-              // "Content-Type": "multipart/form-data", TODO: file bug with OpenAI team.
-            },
-            body,
-          }
-        ).then((res) => {
-          console.log("translationresponse", res);
-          return res.json();
-        });
-        console.log("parsed translationResponse", translationResponse);
-        // Collect experience
+        // Store experience
         const { error } = await supabase
           .from("users")
           .update({
-            experience: translationResponse.text ?? message.text ?? null,
+            experience: message.text ?? null,
             step: step + 1,
           })
           .eq("id", userId);
