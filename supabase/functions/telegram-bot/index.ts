@@ -30,9 +30,12 @@ const inlineKeyboard = new InlineKeyboard()
 
 // Send a keyboard along with a message.
 bot.command("start", async (ctx) => {
-  await ctx.reply(`Hello! Welcome to DoveJobs. I am here to help you create a resume.\n\nTo get your resume, simply answer my questions. I will send you your new resume at the end of our conversation. \n\nIf you're ready, please choose your preferred language.`, {
-    reply_markup: inlineKeyboard,
-  });
+  await ctx.reply(
+    `Hello! Welcome to DoveJobs. I am here to help you create a resume.\n\nTo get your resume, simply answer my questions. I will send you your new resume at the end of our conversation. \n\nIf you're ready, please choose your preferred language.`,
+    {
+      reply_markup: inlineKeyboard,
+    }
+  );
 });
 
 // Handle button callback
@@ -92,7 +95,7 @@ bot.on("message", async (ctx) => {
     }
     return ctx.api.sendMessage(
       userId,
-      `Awesome, welcome ${message.text}! \n\nWhat's your age?`
+      `Awesome, welcome ${message.text}! \n\nWhat's your mobile number?`
     );
   }
   // Handle steps
@@ -100,7 +103,25 @@ bot.on("message", async (ctx) => {
   switch (step) {
     case 0:
       {
-        // Collect age
+        // Collect mobile number
+        console.log(`Phone number: ${message.text!}`);
+        const { error } = await supabase
+          .from("users")
+          .update({ phone_number: message.text!, step: step + 1 })
+          .eq("id", userId);
+        if (error) {
+          console.log(`Error ${error.message} for user ${userId}`);
+          return ctx.api.sendMessage(
+            userId,
+            "Sorry, there was an error! Please try again using the /start command!"
+          );
+        }
+        ctx.api.sendMessage(userId, "Thank you! What is your age?");
+      }
+      break;
+    case 1:
+      {
+        //Collect age
         const { error } = await supabase
           .from("users")
           .update({ age: Number(message.text!), step: step + 1 })
@@ -115,12 +136,12 @@ bot.on("message", async (ctx) => {
         ctx.api.sendMessage(
           userId,
           `Now tell us a bit about your work experience!\n\nNo need to type, you can simply record a voice message! Can be in any language.\n\nHere are some guiding questions you can talk about:
-\n• What was your current/last job and company?\n• Describe what you did at your last job?\n• How long ago was your last job?\n• Are you willing to upskill?
-          `
+  \n• What was your current/last job and company?\n• Describe what you did at your last job?\n• How long ago was your last job?\n• Are you willing to upskill?
+            `
         );
       }
       break;
-    case 1:
+    case 2:
       {
         //  Check if we have audio recording
         const file = await ctx.getFile();
@@ -189,7 +210,7 @@ bot.on("message", async (ctx) => {
         );
       }
       break;
-    case 2:
+    case 3:
       {
         // Collect photo
         let photo_path = null;
@@ -226,8 +247,8 @@ bot.on("message", async (ctx) => {
         );
         ctx.api.sendSticker(
           userId,
-          "CAACAgQAAxkBAAEi6x9kmXxaAa9YSX-R-HLqSykB5Eh2HwACEQADwSr1H-LzA6AOf05zLwQ",
-        )
+          "CAACAgQAAxkBAAEi6x9kmXxaAa9YSX-R-HLqSykB5Eh2HwACEQADwSr1H-LzA6AOf05zLwQ"
+        );
       }
       break;
     default:

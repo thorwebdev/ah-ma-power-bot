@@ -3,6 +3,7 @@ create table "public"."users" (
     "created_at" timestamp with time zone default now(),
     "name" text not null,
     "age" smallint,
+    "phone_number" varchar(8),
     "experience" text,
     "photo_path" text,
     step smallint not null default '0'::smallint,
