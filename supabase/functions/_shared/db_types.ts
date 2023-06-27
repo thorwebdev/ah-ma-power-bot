@@ -12,6 +12,7 @@ export interface Database {
       users: {
         Row: {
           age: number | null
+          approved: boolean
           created_at: string | null
           experience: string | null
           id: number
@@ -25,6 +26,7 @@ export interface Database {
         }
         Insert: {
           age?: number | null
+          approved?: boolean
           created_at?: string | null
           experience?: string | null
           id: number
@@ -38,6 +40,7 @@ export interface Database {
         }
         Update: {
           age?: number | null
+          approved?: boolean
           created_at?: string | null
           experience?: string | null
           id?: number

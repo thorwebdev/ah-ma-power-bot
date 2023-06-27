@@ -9,7 +9,8 @@ create table "public"."users" (
     step smallint not null default '0'::smallint,
     resume_html text,
     resume_markdown text,
-    language text not null default 'en'::text
+    language text not null default 'en'::text,
+    approved boolean not null default false
 );
 
 

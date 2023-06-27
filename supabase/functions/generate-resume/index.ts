@@ -36,6 +36,10 @@ serve(async (req) => {
   try {
     const payload: WebhookPayload = await req.json();
     const user = payload.record;
+    // Check if we should send PDF email
+    if (user.approved) {
+      await supabase.functions.invoke("send-email", { body: payload });
+    }
     // Retrieve user details if final step is reached
     if (user.resume_markdown || user.step !== 5 || !user.experience)
       return new Response("ok");
