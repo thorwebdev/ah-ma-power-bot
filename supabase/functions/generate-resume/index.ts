@@ -29,7 +29,7 @@ const openai = new OpenAIApi(configuration);
 console.log(`Function "generate-resume" up and running!`);
 
 serve(async (req) => {
-  if (Deno.env.get("DISABLE_CLOUD_SERVICES")) {
+  if (Number(Deno.env.get("DISABLE_CLOUD_SERVICES"))) {
     console.log("Cloud services are disabled!");
     return new Response("ok");
   }
