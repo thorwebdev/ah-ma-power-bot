@@ -144,7 +144,7 @@ bot.on("message", async (ctx) => {
     case 2:
       {
         //  Check if we have audio recording
-        if (!message.text) {
+        if (!message.text && !Deno.env.get("DISABLE_CLOUD_SERVICES")) {
           const file = await ctx.getFile();
           const fileURL = `https://api.telegram.org/file/bot${telegramBotToken}/${file.file_path}`;
           const filename = file.file_path?.split("/")[1];
