@@ -1,11 +1,11 @@
-# [grammY](https://grammy.dev) on [Supabase Edge Functions](https://supabase.com/edge-functions)
+# Ah Ma Power 💪👵 Telegram Bot
 
 > Try it out: https://t.me/SGjobsHelperBot
 
 ## Run locally
 
 ```bash
-supabase functions serve --no-verify-jwt --env-file ./supabase/.env
+supabase functions serve --env-file ./supabase/.env
 ```
 
 In a separate terminal window run
@@ -20,10 +20,10 @@ https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://your-ngrok-url.ng
 
 ## Deploying
 
-1. Create the function:
+1. Deploy all functions;
 
 ```shell
-supabase functions deploy --no-verify-jwt telegram-bot
+supabase functions deploy
 ```
 
 2. Contact [@BotFather](https://t.me/BotFather) to create a bot and get its
@@ -31,7 +31,7 @@ supabase functions deploy --no-verify-jwt telegram-bot
 3. Set the secrets:
 
 ```shell
-supabase secrets set BOT_TOKEN=your_token FUNCTION_SECRET=random_secret
+supabase secrets set --env-file ./supabase/.env
 ```
 
 4. Set your bot’s webhook URL to

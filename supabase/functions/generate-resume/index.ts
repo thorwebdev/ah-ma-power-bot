@@ -37,7 +37,7 @@ serve(async (req) => {
     const payload: WebhookPayload = await req.json();
     const user = payload.record;
     // Retrieve user details if final step is reached
-    if (user.resume_markdown || user.step !== 4 || !user.experience)
+    if (user.resume_markdown || user.step !== 5 || !user.experience)
       return new Response("ok");
 
     // Get a temporary photo url to create the resume
@@ -65,6 +65,7 @@ serve(async (req) => {
     - Personal Particulars:
       - Name: ${user.name}
       - Age: ${user.age} (include the birth year)
+      - Preferred language: ${user.language}
     - Contact Information:
       ${
         user.phone_number
