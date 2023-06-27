@@ -50,33 +50,24 @@ serve(async (req) => {
 
     // Construct the prompt
     const prompt = `
-    - Given the following context, generate a one page resume in Markdown format. 
+    - Given the following context, generate a short resume in Markdown format. 
     - If there is a photo, include it at the top.
     - Include a callout as Markdown block quote about the "NEW PART-TIME RE-EMPLOYMENT GRANT (UP TO $125,000 PER COMPANY)" when employing a senior worker aged 60 years and above with a link to https://www.wsg.gov.sg/docs/default-source/content/programmes-and-initiatives/senior-worker-early-adopter-grant-and-part-time-re-employment-grant-employers/new-ptrg-factsheet.pdf?sfvrsn=586dc2eb_0 titled "more details".
     - Calculate all dates based on the current year: ${new Date().getFullYear()}
-    - In the Experience section, provide as much context as possible.
-    - Only use the information provided in the CONTEXT.
+    - Only use the information provided in the CONTEXT!
 
     CONTEXT:
     ${photo_url ? `- Photo: ${photo_url}` : ""}
     - Personal Particulars:
       - Name: ${user.name}
-      - Age: ${user.age}
+      - Age: ${user.age} (include the birth year)
     - Contact Information:
       ${
         user.phone_number
           ? `- Phone: ${user.phone_number}  (phone communication preferred)`
           : ""
       } 
-      ${user.postal_code ? `- Postal code: ${user.postal_code}` : ""}
     - Experience: ${user.experience}
-    - Skills:
-      - speaks english
-      ${
-        user.preferred_language
-          ? `- Speaks and writes ${user.preferred_language}`
-          : ""
-      }
   `;
     // Request the OpenAI API for the response based on the prompt
     const response = await openai.createChatCompletion({
@@ -115,11 +106,6 @@ serve(async (req) => {
               printBackground: false,
               format: "A4",
             },
-            // addStyleTag: [
-            //   {
-            //     url: "./styles.css",
-            //   },
-            // ],
           }),
         }
       ).then((res) => {
