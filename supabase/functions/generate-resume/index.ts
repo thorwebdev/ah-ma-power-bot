@@ -1,7 +1,7 @@
-import { serve } from "http/server.ts";
-import { Configuration, OpenAIApi, ResponseTypes } from "openai-edge";
 import { createClient } from "@supabase/supabase-js";
 import { Bot, InputFile } from "grammy";
+import { serve } from "http/server.ts";
+import { Configuration, OpenAIApi, ResponseTypes } from "openai-edge";
 import showdown from "showdown";
 import { Database } from "../_shared/db_types.ts";
 
@@ -33,7 +33,7 @@ serve(async (req) => {
     const payload: WebhookPayload = await req.json();
     const user = payload.record;
     // Retrieve user details if final step is reached
-    if (user.resume_markdown || user.step !== 3 || !user.experience)
+    if (user.resume_markdown || user.step !== 4 || !user.experience)
       return new Response("ok");
 
     // Get a temporary photo url to create the resume
@@ -50,12 +50,11 @@ serve(async (req) => {
 
     // Construct the prompt
     const prompt = `
-    - Given the following context, generate a one page resume in Markdown format. 
+    - Given the following context, generate a short resume in Markdown format. 
     - If there is a photo, include it at the top.
     - Include a callout as Markdown block quote about the "NEW PART-TIME RE-EMPLOYMENT GRANT (UP TO $125,000 PER COMPANY)" when employing a senior worker aged 60 years and above with a link to https://www.wsg.gov.sg/docs/default-source/content/programmes-and-initiatives/senior-worker-early-adopter-grant-and-part-time-re-employment-grant-employers/new-ptrg-factsheet.pdf?sfvrsn=586dc2eb_0 titled "more details".
     - Calculate all dates based on the current year: ${new Date().getFullYear()}
-    - In the Experience section, provide as much context as possible.
-    - Only use the information provided in the CONTEXT.
+    - Only use the information provided in the CONTEXT!
 
     CONTEXT:
     ${photo_url ? `- Photo: ${photo_url}` : ""}
@@ -63,10 +62,12 @@ serve(async (req) => {
       - Name: ${user.name}
       - Age: ${user.age} (include the birth year)
     - Contact Information:
-      - Phone: 12345678 (phone communication preferred)
-      - Postal code: 460503
-    - Experience:
-      ${user.experience}
+      ${
+        user.phone_number
+          ? `- Phone: ${user.phone_number}  (phone communication preferred)`
+          : ""
+      } 
+    - Experience: ${user.experience}
   `;
     // Request the OpenAI API for the response based on the prompt
     const response = await openai.createChatCompletion({
