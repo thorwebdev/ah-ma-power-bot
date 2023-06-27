@@ -16,6 +16,7 @@ export interface Database {
           experience: string | null
           id: number
           name: string
+          phone_number: string | null
           photo_path: string | null
           resume_html: string | null
           resume_markdown: string | null
@@ -27,6 +28,7 @@ export interface Database {
           experience?: string | null
           id: number
           name: string
+          phone_number?: string | null
           photo_path?: string | null
           resume_html?: string | null
           resume_markdown?: string | null
@@ -38,6 +40,7 @@ export interface Database {
           experience?: string | null
           id?: number
           name?: string
+          phone_number?: string | null
           photo_path?: string | null
           resume_html?: string | null
           resume_markdown?: string | null

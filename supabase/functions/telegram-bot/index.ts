@@ -2,13 +2,13 @@
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
 
-import { serve } from "http/server.ts";
 import { createClient } from "@supabase/supabase-js";
+import { serve } from "http/server.ts";
 import { Database } from "../_shared/db_types.ts";
 
 console.log(`Function "telegram-bot" up and running!`);
 
-import { Bot, webhookCallback, InlineKeyboard } from "grammy";
+import { Bot, InlineKeyboard, webhookCallback } from "grammy";
 
 const telegramBotToken = Deno.env.get("BOT_TOKEN");
 const bot = new Bot(telegramBotToken || "");
@@ -30,9 +30,12 @@ const inlineKeyboard = new InlineKeyboard()
 
 // Send a keyboard along with a message.
 bot.command("start", async (ctx) => {
-  await ctx.reply(`Hello! I'm Dove, and I'm here to help you make a resume. 📄\n\nSimply answer my questions to get your brand new resume at the end.\n\nIf you're ready, please choose your preferred language. 😊`, {
-    reply_markup: inlineKeyboard,
-  });
+  await ctx.reply(
+    `Hello! I'm Dove, and I'm here to help you make a resume. 📄\n\nSimply answer my questions to get your brand new resume at the end.\n\nIf you're ready, please choose your preferred language. 😊`,
+    {
+      reply_markup: inlineKeyboard,
+    }
+  );
 });
 
 // Handle button callback
@@ -92,7 +95,7 @@ bot.on("message", async (ctx) => {
     }
     return ctx.api.sendMessage(
       userId,
-      `Hope you're having a lovely day, ${message.text}! 😊\n\nHow old are you this year?`
+      `Hope you're having a lovely day, ${message.text}! 😊\n\nWhat's your mobile number?`
     );
   }
   // Handle steps
@@ -100,7 +103,25 @@ bot.on("message", async (ctx) => {
   switch (step) {
     case 0:
       {
-        // Collect age
+        // Collect mobile number
+        console.log(`Phone number: ${message.text!}`);
+        const { error } = await supabase
+          .from("users")
+          .update({ phone_number: message.text!, step: step + 1 })
+          .eq("id", userId);
+        if (error) {
+          console.log(`Error ${error.message} for user ${userId}`);
+          return ctx.api.sendMessage(
+            userId,
+            "Sorry, there was an error! Please try again using the /start command!"
+          );
+        }
+        ctx.api.sendMessage(userId, "Thank you! How old are you this year?");
+      }
+      break;
+    case 1:
+      {
+        //Collect age
         const { error } = await supabase
           .from("users")
           .update({ age: Number(message.text!), step: step + 1 })
@@ -120,54 +141,56 @@ bot.on("message", async (ctx) => {
         );
       }
       break;
-    case 1:
+    case 2:
       {
         //  Check if we have audio recording
-        const file = await ctx.getFile();
-        const fileURL = `https://api.telegram.org/file/bot${telegramBotToken}/${file.file_path}`;
-        const filename = file.file_path?.split("/")[1];
-        console.log("voice message", fileURL, filename);
-        // Convert audio
-        const headers = {
-          Authorization: `Bearer ${Deno.env.get("CLOUDCONVERT_API_KEY")}`,
-          "Content-type": "application/json",
-          accept: "application/json",
-        };
-        console.log("cloudconvert headers", headers);
-        const audioConversionRes = await fetch(
-          `https://api.cloudconvert.com/v2/jobs`,
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              tasks: {
-                "import-1": {
-                  operation: "import/url",
-                  url: fileURL,
-                  filename,
+        if (!message.text) {
+          const file = await ctx.getFile();
+          const fileURL = `https://api.telegram.org/file/bot${telegramBotToken}/${file.file_path}`;
+          const filename = file.file_path?.split("/")[1];
+          console.log("voice message", fileURL, filename);
+          // Convert audio
+          const headers = {
+            Authorization: `Bearer ${Deno.env.get("CLOUDCONVERT_API_KEY")}`,
+            "Content-type": "application/json",
+            accept: "application/json",
+          };
+          console.log("cloudconvert headers", headers);
+          const audioConversionRes = await fetch(
+            `https://api.cloudconvert.com/v2/jobs`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                tasks: {
+                  "import-1": {
+                    operation: "import/url",
+                    url: fileURL,
+                    filename,
+                  },
+                  "task-1": {
+                    filename: `${userId}.mp3`,
+                    operation: "convert",
+                    input_format: "oga",
+                    output_format: "mp3",
+                    engine: "ffmpeg",
+                    input: ["import-1"],
+                    audio_codec: "mp3",
+                    audio_qscale: 0,
+                  },
+                  "export-1": {
+                    operation: "export/url",
+                    input: ["task-1"],
+                    inline: false,
+                    archive_multiple_files: false,
+                  },
                 },
-                "task-1": {
-                  filename: `${userId}.mp3`,
-                  operation: "convert",
-                  input_format: "oga",
-                  output_format: "mp3",
-                  engine: "ffmpeg",
-                  input: ["import-1"],
-                  audio_codec: "mp3",
-                  audio_qscale: 0,
-                },
-                "export-1": {
-                  operation: "export/url",
-                  input: ["task-1"],
-                  inline: false,
-                  archive_multiple_files: false,
-                },
-              },
-              tag: "jobbuilder",
-            }),
-          }
-        ).then((res) => res.json());
-        console.log("audioConversionRes", audioConversionRes);
+                tag: "jobbuilder",
+              }),
+            }
+          ).then((res) => res.json());
+          console.log("audioConversionRes", audioConversionRes);
+        }
         // Store experience
         const { error } = await supabase
           .from("users")
@@ -189,7 +212,7 @@ bot.on("message", async (ctx) => {
         );
       }
       break;
-    case 2:
+    case 3:
       {
         // Collect photo
         let photo_path = null;
@@ -226,8 +249,8 @@ bot.on("message", async (ctx) => {
         );
         ctx.api.sendSticker(
           userId,
-          "CAACAgQAAxkBAAEi6x9kmXxaAa9YSX-R-HLqSykB5Eh2HwACEQADwSr1H-LzA6AOf05zLwQ",
-        )
+          "CAACAgQAAxkBAAEi6x9kmXxaAa9YSX-R-HLqSykB5Eh2HwACEQADwSr1H-LzA6AOf05zLwQ"
+        );
       }
       break;
     default:
