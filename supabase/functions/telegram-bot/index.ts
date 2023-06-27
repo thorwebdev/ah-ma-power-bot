@@ -144,51 +144,53 @@ bot.on("message", async (ctx) => {
     case 2:
       {
         //  Check if we have audio recording
-        const file = await ctx.getFile();
-        const fileURL = `https://api.telegram.org/file/bot${telegramBotToken}/${file.file_path}`;
-        const filename = file.file_path?.split("/")[1];
-        console.log("voice message", fileURL, filename);
-        // Convert audio
-        const headers = {
-          Authorization: `Bearer ${Deno.env.get("CLOUDCONVERT_API_KEY")}`,
-          "Content-type": "application/json",
-          accept: "application/json",
-        };
-        console.log("cloudconvert headers", headers);
-        const audioConversionRes = await fetch(
-          `https://api.cloudconvert.com/v2/jobs`,
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              tasks: {
-                "import-1": {
-                  operation: "import/url",
-                  url: fileURL,
-                  filename,
+        if (!message.text) {
+          const file = await ctx.getFile();
+          const fileURL = `https://api.telegram.org/file/bot${telegramBotToken}/${file.file_path}`;
+          const filename = file.file_path?.split("/")[1];
+          console.log("voice message", fileURL, filename);
+          // Convert audio
+          const headers = {
+            Authorization: `Bearer ${Deno.env.get("CLOUDCONVERT_API_KEY")}`,
+            "Content-type": "application/json",
+            accept: "application/json",
+          };
+          console.log("cloudconvert headers", headers);
+          const audioConversionRes = await fetch(
+            `https://api.cloudconvert.com/v2/jobs`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                tasks: {
+                  "import-1": {
+                    operation: "import/url",
+                    url: fileURL,
+                    filename,
+                  },
+                  "task-1": {
+                    filename: `${userId}.mp3`,
+                    operation: "convert",
+                    input_format: "oga",
+                    output_format: "mp3",
+                    engine: "ffmpeg",
+                    input: ["import-1"],
+                    audio_codec: "mp3",
+                    audio_qscale: 0,
+                  },
+                  "export-1": {
+                    operation: "export/url",
+                    input: ["task-1"],
+                    inline: false,
+                    archive_multiple_files: false,
+                  },
                 },
-                "task-1": {
-                  filename: `${userId}.mp3`,
-                  operation: "convert",
-                  input_format: "oga",
-                  output_format: "mp3",
-                  engine: "ffmpeg",
-                  input: ["import-1"],
-                  audio_codec: "mp3",
-                  audio_qscale: 0,
-                },
-                "export-1": {
-                  operation: "export/url",
-                  input: ["task-1"],
-                  inline: false,
-                  archive_multiple_files: false,
-                },
-              },
-              tag: "jobbuilder",
-            }),
-          }
-        ).then((res) => res.json());
-        console.log("audioConversionRes", audioConversionRes);
+                tag: "jobbuilder",
+              }),
+            }
+          ).then((res) => res.json());
+          console.log("audioConversionRes", audioConversionRes);
+        }
         // Store experience
         const { error } = await supabase
           .from("users")
