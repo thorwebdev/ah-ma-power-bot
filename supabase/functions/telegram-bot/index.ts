@@ -30,7 +30,7 @@ const inlineKeyboard = new InlineKeyboard()
 
 // Send a keyboard along with a message.
 bot.command("start", async (ctx) => {
-  await ctx.reply(`Hello! Welcome to DoveJobs. I am here to help you create a resume.\n\nTo get your resume, simply answer my questions. I will send you your new resume at the end of our conversation. \n\nIf you're ready, please choose your preferred language.`, {
+  await ctx.reply(`Hello! I'm Dove, and I'm here to help you make a resume. 📄\n\nSimply answer my questions to get your brand new resume at the end.\n\nIf you're ready, please choose your preferred language. 😊`, {
     reply_markup: inlineKeyboard,
   });
 });
@@ -92,7 +92,7 @@ bot.on("message", async (ctx) => {
     }
     return ctx.api.sendMessage(
       userId,
-      `Awesome, welcome ${message.text}! \n\nWhat's your age?`
+      `Hope you're having a lovely day, ${message.text}! 😊\n\nHow old are you this year?`
     );
   }
   // Handle steps
@@ -114,8 +114,8 @@ bot.on("message", async (ctx) => {
         }
         ctx.api.sendMessage(
           userId,
-          `Now tell us a bit about your work experience!\n\nNo need to type, you can simply record a voice message! Can be in any language.\n\nHere are some guiding questions you can talk about:
-\n• What was your current/last job and company?\n• Describe what you did at your last job?\n• How long ago was your last job?\n• Are you willing to upskill?
+          `Now tell us a bit about your work experience! 💼\n\nYou can answer using voice message in any language, no need to type! 🗣️\n\nHere are some things you can talk about:
+\n• What was your current or last job?\n• What did you do at that job?\n• When was that job?\n• Are you willing to upskill for a new job?
           `
         );
       }
