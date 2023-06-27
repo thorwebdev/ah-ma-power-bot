@@ -15,7 +15,8 @@ export interface Database {
           created_at: string | null
           experience: string | null
           id: number
-          name: string
+          language: string
+          name: string | null
           phone_number: string | null
           photo_path: string | null
           resume_html: string | null
@@ -27,7 +28,8 @@ export interface Database {
           created_at?: string | null
           experience?: string | null
           id: number
-          name: string
+          language?: string
+          name?: string | null
           phone_number?: string | null
           photo_path?: string | null
           resume_html?: string | null
@@ -39,7 +41,8 @@ export interface Database {
           created_at?: string | null
           experience?: string | null
           id?: number
-          name?: string
+          language?: string
+          name?: string | null
           phone_number?: string | null
           photo_path?: string | null
           resume_html?: string | null

@@ -4,6 +4,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { serve } from "http/server.ts";
+import { prompts } from "../_shared/translations.ts";
 import { Database } from "../_shared/db_types.ts";
 
 console.log(`Function "telegram-bot" up and running!`);
@@ -19,46 +20,41 @@ const supabase = createClient<Database>(
 
 // Construct a keyboard.
 const inlineKeyboard = new InlineKeyboard()
-  .text("English", "0-en")
+  .text("English", "language:en")
   .row()
-  .text("中文 (尚不支持)", "0-cn")
+  .text("中文", "language:cn")
   .row()
-  .text("Melayu (belum disokong lagi)", "0-ms")
+  .text("Melayu", "language:ms")
   .row()
-  .text("தமிழ் (இன்னும் ஆதரிக்கப்படவில்லை)", "0-ta")
+  .text("தமிழ்", "language:ta")
   .row();
 
 // Send a keyboard along with a message.
 bot.command("start", async (ctx) => {
-  await ctx.reply(
-    `Hello! I'm Dove, and I'm here to help you make a resume. 📄\n\nSimply answer my questions to get your brand new resume at the end.\n\nIf you're ready, please choose your preferred language. 😊`,
-    {
-      reply_markup: inlineKeyboard,
-    }
-  );
+  await ctx.reply(prompts({ key: "welcome", language: "en" }), {
+    reply_markup: inlineKeyboard,
+  });
 });
 
 // Handle button callback
 bot.on("callback_query:data", async (ctx) => {
-  const data = ctx.callbackQuery.data;
+  const [key, value] = ctx.callbackQuery.data.split(":");
   const chatId = ctx.chat?.id;
-  if (data !== "0-en") {
-    await ctx.answerCallbackQuery({
-      text: "Sorry, this language is not yet supported. Please choose English to continue!",
-    });
-    if (chatId)
-      ctx.api.sendMessage(
-        chatId,
-        "Sorry, this language is not yet supported. Please choose English to continue!"
-      );
-  } else {
-    if (chatId) {
-      // TODO move to separate command?
+  if (chatId && key === "language") {
+    try {
+      // Delete old record if ther is one
       await supabase.from("users").delete().eq("id", chatId);
+      // Create new record
+      await supabase.from("users").insert({ id: chatId, language: value });
       await ctx.answerCallbackQuery();
-      ctx.api.sendMessage(
+      return ctx.api.sendMessage(
         chatId,
-        "Great, let's get started 🚀\n \nWhat's your full name?"
+        prompts({ key: "step-0", language: value })
+      );
+    } catch {
+      return ctx.api.sendMessage(
+        chatId,
+        "Sorry, this language is not yet supported!"
       );
     }
   }
@@ -68,43 +64,43 @@ bot.on("callback_query:data", async (ctx) => {
 bot.on("message", async (ctx) => {
   const message = ctx.message; // the message object
   const userId = ctx.from.id;
-  // Get user record from database
-  const { data, error } = await supabase
-    .from("users")
-    .select()
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) {
-    console.log(`Error ${error.message} for user ${userId}`);
-    return ctx.api.sendMessage(
-      userId,
-      "Sorry, there was an error! Please try again using the /start command!"
-    );
-  }
-  if (!data) {
-    // New user, let's create them
-    const { error } = await supabase
+  try {
+    // Get user record from database
+    const { data, error } = await supabase
       .from("users")
-      .insert({ id: userId, name: message.text! });
-    if (error) {
-      console.log(`Error ${error.message} for user ${userId}`);
+      .select()
+      .eq("id", userId)
+      .maybeSingle();
+    if (!data || error) {
+      console.log(`Error ${error?.message ?? "no data"} for user ${userId}`);
       return ctx.api.sendMessage(
         userId,
-        "Sorry, there was an error! Please try again using the /start command!"
+        prompts({ key: "error", language: "en" })
       );
     }
-    return ctx.api.sendMessage(
-      userId,
-      `Hope you're having a lovely day, ${message.text}! 😊\n\nWhat's your mobile number?`
-    );
-  }
-  // Handle steps
-  const { step } = data;
-  switch (step) {
-    case 0:
-      {
+    // Handle steps
+    const { step, language } = data;
+    switch (step) {
+      case 0: {
+        // Collect name
+        const { error } = await supabase
+          .from("users")
+          .update({ name: message.text!, step: step + 1 })
+          .eq("id", userId);
+        if (error) {
+          console.log(`Error ${error.message} for user ${userId}`);
+          return ctx.api.sendMessage(
+            userId,
+            prompts({ key: "error", language })
+          );
+        }
+        return ctx.api.sendMessage(
+          userId,
+          prompts({ key: "step-1", text: message.text, language })
+        );
+      }
+      case 1: {
         // Collect mobile number
-        console.log(`Phone number: ${message.text!}`);
         const { error } = await supabase
           .from("users")
           .update({ phone_number: message.text!, step: step + 1 })
@@ -113,14 +109,15 @@ bot.on("message", async (ctx) => {
           console.log(`Error ${error.message} for user ${userId}`);
           return ctx.api.sendMessage(
             userId,
-            "Sorry, there was an error! Please try again using the /start command!"
+            prompts({ key: "error", language })
           );
         }
-        ctx.api.sendMessage(userId, "Thank you! How old are you this year?");
+        return ctx.api.sendMessage(
+          userId,
+          prompts({ key: "step-2", language })
+        );
       }
-      break;
-    case 1:
-      {
+      case 2: {
         //Collect age
         const { error } = await supabase
           .from("users")
@@ -130,32 +127,26 @@ bot.on("message", async (ctx) => {
           console.log(`Error ${error.message} for user ${userId}`);
           return ctx.api.sendMessage(
             userId,
-            "Sorry, there was an error! Please try again using the /start command!"
+            prompts({ key: "error", language })
           );
         }
-        ctx.api.sendMessage(
+        return ctx.api.sendMessage(
           userId,
-          `Now tell us a bit about your work experience! 💼\n\nYou can answer using voice message in any language, no need to type! 🗣️\n\nHere are some things you can talk about:
-\n• What was your current or last job?\n• What did you do at that job?\n• When was that job?\n• Are you willing to upskill for a new job?
-          `
+          prompts({ key: "step-3", language })
         );
       }
-      break;
-    case 2:
-      {
+      case 3: {
         //  Check if we have audio recording
         if (!message.text) {
           const file = await ctx.getFile();
           const fileURL = `https://api.telegram.org/file/bot${telegramBotToken}/${file.file_path}`;
           const filename = file.file_path?.split("/")[1];
-          console.log("voice message", fileURL, filename);
           // Convert audio
           const headers = {
             Authorization: `Bearer ${Deno.env.get("CLOUDCONVERT_API_KEY")}`,
             "Content-type": "application/json",
             accept: "application/json",
           };
-          console.log("cloudconvert headers", headers);
           const audioConversionRes = await fetch(
             `https://api.cloudconvert.com/v2/jobs`,
             {
@@ -203,17 +194,15 @@ bot.on("message", async (ctx) => {
           console.log(`Error ${error.message} for user ${userId}`);
           return ctx.api.sendMessage(
             userId,
-            "Sorry, there was an error! Please try again using the /start command!"
+            prompts({ key: "error", language })
           );
         }
-        ctx.api.sendMessage(
+        return ctx.api.sendMessage(
           userId,
-          `Thank you! Lastly, please take a picture of your face using the front camera of your phone, preferably with a white background. \n\nReply with "No" if you prefer not to.`
+          prompts({ key: "step-4", language })
         );
       }
-      break;
-    case 3:
-      {
+      case 4: {
         // Collect photo
         let photo_path = null;
         if (!message.text || message.text?.toLowerCase() !== "no") {
@@ -240,26 +229,26 @@ bot.on("message", async (ctx) => {
           console.log(`Error ${error.message} for user ${userId}`);
           return ctx.api.sendMessage(
             userId,
-            "Sorry, there was an error! Please try again using the /start command!"
+            prompts({ key: "error", language })
           );
         }
-        ctx.api.sendMessage(
-          userId,
-          `Please hold on while we generate your resume. You will get a notification once your resume is ready.`
-        );
-        ctx.api.sendSticker(
+        ctx.api.sendMessage(userId, prompts({ key: "step-5", language }));
+        return ctx.api.sendSticker(
           userId,
           "CAACAgQAAxkBAAEi6x9kmXxaAa9YSX-R-HLqSykB5Eh2HwACEQADwSr1H-LzA6AOf05zLwQ"
         );
       }
-      break;
-    default:
-      console.log(`Unhandled step: ${step}`);
-      ctx.api.sendMessage(
-        userId,
-        "Sorry, there was an error! Please try again using the /start command!"
-      );
-      break;
+      default: {
+        console.log(`Unhandled step: ${step}`);
+        return ctx.api.sendMessage(userId, prompts({ key: "error", language }));
+      }
+    }
+  } catch (error) {
+    console.log(`Caught Error ${error.message}`);
+    return ctx.api.sendMessage(
+      userId,
+      prompts({ key: "error", language: "en" })
+    );
   }
 });
 

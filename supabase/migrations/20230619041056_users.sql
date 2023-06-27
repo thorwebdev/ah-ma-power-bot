@@ -1,14 +1,15 @@
 create table "public"."users" (
     "id" numeric not null,
     "created_at" timestamp with time zone default now(),
-    "name" text not null,
+    "name" text,
     "age" smallint,
     "phone_number" text,
     "experience" text,
     "photo_path" text,
     step smallint not null default '0'::smallint,
     resume_html text,
-    resume_markdown text
+    resume_markdown text,
+    language text not null default 'en'::text
 );
 
 
