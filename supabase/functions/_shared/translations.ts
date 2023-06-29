@@ -62,11 +62,11 @@ export const prompts = ({
       ta: `உங்கள் ரிசியூமை உருவாக்குவதற்கு காத்திருங்கள். உங்கள் ரிசியூம் தயாராயில்லையெனில், ஒரு அறிவிப்பைப் பெறுவீர்கள்.`,
     },
     "step-6": {
-      en: `If you are happy with your resume and would like us to share it with Silverjobs, click on 'Yes'. \n\nBy clicking on 'Yes', you are agreeing to <a href="https://silverjobs.sg/site/tnc/">Silverjobs Terms & Conditions</a> and potential employers can contact you for future opportunities.`,
-      cn: `如果你对你的简历满意，并希望我们与Silverjobs分享，请点击“是”。\n\n点击“是”即表示你同意 <a href="https://silverjobs.sg/site/tnc/">Silverjobs条款和条件</a>，潜在雇主可以与你联系以获取未来的机会。`,
-      ms: `Jika kamu berpuas hati dengan resume kamu dan ingin kami kongsikan dengan Silverjobs, klik pada 'Ya'. \n\nDengan mengklik 'Ya', kamu bersetuju dengan <a href="https://silverjobs.sg/site/tnc/">Terma & Syarat Silverjobs</a> dan majikan berpotensi boleh menghubungi kamu untuk peluang masa depan.`,
-      ta: `உங்கள் ரிசியூமை மிக்க முகநூல் மற்றும் அதை Silverjobs உடன் பகிர்ந்துகொள்ள விரும்பினால், 'ஆமாம்' என்பதைத் தேர்ந்தெடுக்கவும். \n\n'ஆமாம்' என்பதைத் தேர்ந்தெடுக்கும்போது, உங்கள் ஐந்தும் ஒப்புக்கொள்கின்றீர்கள் <a href="https://silverjobs.sg/site/tnc/">Silverjobs விதிமுறைகளை</a> மற்றும் தானியங்கி திட்டத்தில் வேலைவாய்ப்புகளுக்கு தொடர்பு கொள்ள முடியும்.`,
-    },
+      en: "Almost finished\\! Please review your resume and let us know if your happy for us to submit it to the SilverJobs platform\\. \n\n By tapping *Apply* you agree to the SilverJobs [Terms & Conditions](https://silverjobs.sg/site/tnc) and for [CFS](https://cfs.org.sg/activities-job-briefings) \\(Centre for Seniors\\) to contact you for future opportunities\\.",
+      cn: "就快结束了\\！请查看您的简历，并告知我们您是否愿意我们将其提交到 SilverJobs 平台\\。 \n\n 点击*应用*即表示您同意 SilverJobs [条款和条件](https://silverjobs.sg/site/tnc) 以及 [CFS](https://cfs.org.sg/activities-工作简报）\\（老年人中心\\）与您联系以获得未来的机会\\。",
+      ms: "Hampir siap\\! Sila semak resume anda dan beritahu kami jika anda gembira untuk kami menyerahkannya ke platform SilverJobs\\. \n\n Dengan mengetik *Mohon* anda bersetuju menerima [Terma & Syarat] SilverJobs(https://silverjobs.sg/site/tnc) dan untuk [CFS](https://cfs.org.sg/activities- taklimat kerja) \\(Pusat Warga Emas\\) untuk menghubungi anda untuk peluang masa hadapan\\.",
+      ta: "கிட்டத்தட்ட முடிந்துவிட்டது\\! உங்கள் விண்ணப்பத்தை மதிப்பாய்வு செய்து, அதை SilverJobs தளத்திற்குச் சமர்ப்பிப்பதில் நீங்கள் மகிழ்ச்சியடைகிறீர்களா என்பதை எங்களுக்குத் தெரிவிக்கவும். \n\n *விண்ணப்பிக்கவும்* என்பதைத் தட்டுவதன் மூலம் SilverJobs [விதிமுறைகள் & நிபந்தனைகள்](https://silverjobs.sg/site/tnc) மற்றும் [CFS](https://cfs.org.sg/activities-) ஆகியவற்றை ஏற்கிறீர்கள். வேலை சுருக்கங்கள்) \\(முதியோர்களுக்கான மையம்\\) எதிர்கால வாய்ப்புகளுக்கு உங்களைத் தொடர்பு கொள்ள\\."
+    }
   };
   if (!prompts[key]?.[language])
     throw new Error(

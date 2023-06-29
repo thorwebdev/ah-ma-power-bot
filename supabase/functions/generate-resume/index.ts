@@ -4,6 +4,7 @@ import { serve } from "http/server.ts";
 import { Configuration, OpenAIApi, ResponseTypes } from "openai-edge";
 import showdown from "showdown";
 import { Database } from "../_shared/db_types.ts";
+import { prompts } from "../_shared/translations.ts";
 
 const bot = new Bot(Deno.env.get("BOT_TOKEN") || "");
 const supabase = createClient<Database>(
@@ -146,7 +147,7 @@ serve(async (req) => {
         .row();
       await bot.api.sendMessage(
         user.id,
-        "Almost finished\\! Please review your resume and let us know if your happy for us to submit it to the SilverJobs platform\\. \n\n By tapping *Apply* you agree to the SilverJobs [Terms & Conditions](https://silverjobs.sg/site/tnc) and for [CFS](https://cfs.org.sg/activities-job-briefings) \\(Centre for Seniors\\) to contact you for future opportunities\\.",
+        prompts({ key: "step-6", language: user.language }),
         {
           reply_markup: inlineKeyboard,
           parse_mode: "MarkdownV2",
