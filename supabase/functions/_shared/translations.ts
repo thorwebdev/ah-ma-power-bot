@@ -66,6 +66,18 @@ export const prompts = ({
       cn: "就快结束了\\！请查看您的简历，并告知我们您是否愿意我们将其提交到 SilverJobs 平台\\。 \n\n 点击*应用*即表示您同意 SilverJobs [条款和条件](https://silverjobs.sg/site/tnc) 以及 [CFS](https://cfs.org.sg/activities-工作简报）\\（老年人中心\\）与您联系以获得未来的机会\\。",
       ms: "Hampir siap\\! Sila semak resume anda dan beritahu kami jika anda gembira untuk kami menyerahkannya ke platform SilverJobs\\. \n\n Dengan mengetik *Mohon* anda bersetuju menerima [Terma & Syarat] SilverJobs(https://silverjobs.sg/site/tnc) dan untuk [CFS](https://cfs.org.sg/activities- taklimat kerja) \\(Pusat Warga Emas\\) untuk menghubungi anda untuk peluang masa hadapan\\.",
       ta: "கிட்டத்தட்ட முடிந்துவிட்டது\\! உங்கள் விண்ணப்பத்தை மதிப்பாய்வு செய்து, அதை SilverJobs தளத்திற்குச் சமர்ப்பிப்பதில் நீங்கள் மகிழ்ச்சியடைகிறீர்களா என்பதை எங்களுக்குத் தெரிவிக்கவும். \n\n *விண்ணப்பிக்கவும்* என்பதைத் தட்டுவதன் மூலம் SilverJobs [விதிமுறைகள் & நிபந்தனைகள்](https://silverjobs.sg/site/tnc) மற்றும் [CFS](https://cfs.org.sg/activities-) ஆகியவற்றை ஏற்கிறீர்கள். வேலை சுருக்கங்கள்) \\(முதியோர்களுக்கான மையம்\\) எதிர்கால வாய்ப்புகளுக்கு உங்களைத் தொடர்பு கொள்ள\\."
+    },
+    "apply": {
+      en: "apply",
+      cn: "应用",
+      ms: "Mohon",
+      ta: "விண்ணப்பிக்கவும்"
+    },
+    "restart": {
+      en: "restart",
+      cn: "重新启动",
+      ms: "Mulakan semula",
+      ta: "மீண்டும் துவக்கம் செய்"
     }
   };
   if (!prompts[key]?.[language])
