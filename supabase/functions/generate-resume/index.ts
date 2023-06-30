@@ -141,9 +141,15 @@ serve(async (req) => {
       // Send permission prompt
       // Construct a keyboard.
       const inlineKeyboard = new InlineKeyboard()
-        .text(prompts({key: "apply", language: user.language}), `approval:true`)
+        .text(
+          prompts({ key: "apply", language: user.language }),
+          `approval:${user.language}`
+        )
         .row()
-        .text(prompts({key: "restart", language: user.language}), `language:${user.language}`)
+        .text(
+          prompts({ key: "restart", language: user.language }),
+          `language:${user.language}`
+        )
         .row();
       await bot.api.sendMessage(
         user.id,

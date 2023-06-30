@@ -62,7 +62,7 @@ bot.on("callback_query:data", async (ctx) => {
     await supabase.from("users").update({ approved: true }).eq("id", chatId);
     await ctx.api.sendMessage(
       chatId,
-      "Thank you, your resume has been submitted to SilverJobs and they will contact you when suitable opportunities come up."
+      prompts({ key: "step-final", language: value })
     );
     return await ctx.answerCallbackQuery();
   }
