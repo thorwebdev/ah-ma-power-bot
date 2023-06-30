@@ -1,9 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import { Bot, InputFile } from "grammy";
+import { Bot, InputFile, InlineKeyboard } from "grammy";
 import { serve } from "http/server.ts";
 import { Configuration, OpenAIApi, ResponseTypes } from "openai-edge";
 import showdown from "showdown";
 import { Database } from "../_shared/db_types.ts";
+import { prompts } from "../_shared/translations.ts";
 
 const bot = new Bot(Deno.env.get("BOT_TOKEN") || "");
 const supabase = createClient<Database>(
@@ -36,24 +37,28 @@ serve(async (req) => {
   try {
     const payload: WebhookPayload = await req.json();
     const user = payload.record;
+    // Check if we should send PDF email
+    if (user.approved) {
+      await supabase.functions.invoke("send-email", { body: payload });
+    }
     // Retrieve user details if final step is reached
-    if (user.resume_markdown || user.step !== 5 || !user.experience)
+    if (user.resume_html || user.step !== 5 || !user.experience)
       return new Response("ok");
 
-    // Get a temporary photo url to create the resume
-    let photo_url: string | undefined;
-    if (user.photo_path) {
-      const { data } = await supabase.storage
-        .from("images")
-        .createSignedUrl(user.photo_path, 60, {
-          transform: { width: 200, height: 200, resize: "contain" },
-        });
-      console.log({ data });
-      if (data) photo_url = data.signedUrl;
-    }
+    if (!user.resume_markdown) {
+      // Get a temporary photo url to create the resume
+      let photo_url: string | undefined;
+      if (user.photo_path) {
+        const { data } = await supabase.storage
+          .from("images")
+          .createSignedUrl(user.photo_path, 60, {
+            transform: { width: 200, height: 200, resize: "contain" },
+          });
+        if (data) photo_url = data.signedUrl;
+      }
 
-    // Construct the prompt
-    const prompt = `
+      // Construct the prompt
+      const prompt = `
     - Given the following context, generate a short resume in Markdown format. 
     - If there is a photo, include it at the top.
     - Include a callout as Markdown block quote about the "NEW PART-TIME RE-EMPLOYMENT GRANT (UP TO $125,000 PER COMPANY)" when employing a senior worker aged 60 years and above with a link to https://www.wsg.gov.sg/docs/default-source/content/programmes-and-initiatives/senior-worker-early-adopter-grant-and-part-time-re-employment-grant-employers/new-ptrg-factsheet.pdf?sfvrsn=586dc2eb_0 titled "more details".
@@ -74,24 +79,28 @@ serve(async (req) => {
       } 
     - Experience: ${user.experience}
   `;
-    // Request the OpenAI API for the response based on the prompt
-    const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      stream: false,
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 2200,
-      temperature: 0.2,
-    });
-
-    const data =
-      (await response.json()) as ResponseTypes["createChatCompletion"];
-    const markdownContent = data.choices[0].message?.content;
-    if (markdownContent) {
-      const htmlContent = converter.makeHtml(markdownContent);
+      // Request the OpenAI API for the response based on the prompt
+      const response = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        stream: false,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 2200,
+        temperature: 0.2,
+      });
+      console.log("createChatCompletion", response);
+      const data =
+        (await response.json()) as ResponseTypes["createChatCompletion"];
+      user.resume_markdown = data.choices[0].message?.content ?? null;
+    }
+    if (user.resume_markdown) {
+      const htmlContent = converter.makeHtml(user.resume_markdown);
       // Write to db
       await supabase
         .from("users")
-        .update({ resume_markdown: markdownContent, resume_html: htmlContent })
+        .update({
+          resume_markdown: user.resume_markdown,
+          resume_html: htmlContent,
+        })
         .eq("id", user.id);
       // Convert to PDF
       const pdfArrayBuffer = await fetch(
@@ -128,6 +137,27 @@ serve(async (req) => {
       await bot.api.sendDocument(
         user.id,
         new InputFile(pdfArrayBuffer, `${user.name}-resume.pdf`)
+      );
+      // Send permission prompt
+      // Construct a keyboard.
+      const inlineKeyboard = new InlineKeyboard()
+        .text(
+          prompts({ key: "apply", language: user.language }),
+          `approval:${user.language}`
+        )
+        .row()
+        .text(
+          prompts({ key: "restart", language: user.language }),
+          `language:${user.language}`
+        )
+        .row();
+      await bot.api.sendMessage(
+        user.id,
+        prompts({ key: "step-6", language: user.language }),
+        {
+          reply_markup: inlineKeyboard,
+          parse_mode: "MarkdownV2",
+        }
       );
     }
   } catch (e) {

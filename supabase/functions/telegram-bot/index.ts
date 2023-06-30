@@ -57,6 +57,14 @@ bot.on("callback_query:data", async (ctx) => {
         "Sorry, this language is not yet supported!"
       );
     }
+  } else if (chatId && key == "approval") {
+    // Set approved to true to trigger email sending
+    await supabase.from("users").update({ approved: true }).eq("id", chatId);
+    await ctx.api.sendMessage(
+      chatId,
+      prompts({ key: "step-final", language: value })
+    );
+    return await ctx.answerCallbackQuery();
   }
 });
 
